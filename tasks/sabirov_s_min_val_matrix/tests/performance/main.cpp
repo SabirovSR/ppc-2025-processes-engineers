@@ -28,8 +28,8 @@ TEST_P(SabirovSMinValMatrixPerfTests, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
-const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, SabirovSMinValMatrixMPI, SabirovSMinValMatrixSEQ>(PPC_SETTINGS_sabirov_s_min_val_matrix);
+const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, SabirovSMinValMatrixMPI, SabirovSMinValMatrixSEQ>(
+    PPC_SETTINGS_sabirov_s_min_val_matrix);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 

@@ -32,7 +32,7 @@ bool SabirovSMinValMatrixSEQ::RunImpl() {
   }
 
   std::vector<std::vector<InType>> matrix(n, std::vector<InType>(n));
-  
+
   for (InType i = 0; i < n; i++) {
     matrix[i][0] = 1;
     for (InType j = 1; j < n; j++) {

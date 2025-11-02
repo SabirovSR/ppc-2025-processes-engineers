@@ -41,20 +41,20 @@ bool SabirovSMinValMatrixMPI::RunImpl() {
   // Распределяем строки между процессами
   int rows_per_proc = n / size;
   int remainder = n % size;
-  
+
   int start_row = rank * rows_per_proc + std::min(rank, remainder);
   int end_row = start_row + rows_per_proc + (rank < remainder ? 1 : 0);
 
   // Каждый процесс обрабатывает свои строки
   InType local_sum = 0;
-  
+
   for (InType i = start_row; i < end_row; i++) {
     std::vector<InType> row(n);
     row[0] = 1;
     for (InType j = 1; j < n; j++) {
       row[j] = i * n + j + 1;
     }
-    
+
     InType min_val = row[0];
     for (InType j = 1; j < n; j++) {
       if (row[j] < min_val) {
