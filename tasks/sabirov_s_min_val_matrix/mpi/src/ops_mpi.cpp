@@ -3,12 +3,9 @@
 #include <mpi.h>
 
 #include <algorithm>
-#include <limits>
-#include <numeric>
 #include <vector>
 
 #include "sabirov_s_min_val_matrix/common/include/common.hpp"
-#include "util/include/util.hpp"
 
 namespace sabirov_s_min_val_matrix {
 
@@ -42,7 +39,7 @@ bool SabirovSMinValMatrixMPI::RunImpl() {
   int rows_per_proc = n / size;
   int remainder = n % size;
 
-  int start_row = rank * rows_per_proc + std::min(rank, remainder);
+  int start_row = (rank * rows_per_proc) + std::min(rank, remainder);
   int end_row = start_row + rows_per_proc + (rank < remainder ? 1 : 0);
 
   // Каждый процесс обрабатывает свои строки
@@ -52,14 +49,12 @@ bool SabirovSMinValMatrixMPI::RunImpl() {
     std::vector<InType> row(n);
     row[0] = 1;
     for (InType j = 1; j < n; j++) {
-      row[j] = i * n + j + 1;
+      row[j] = (i * n) + j + 1;
     }
 
     InType min_val = row[0];
     for (InType j = 1; j < n; j++) {
-      if (row[j] < min_val) {
-        min_val = row[j];
-      }
+      min_val = std::min(min_val, row[j]);
     }
     local_sum += min_val;
   }

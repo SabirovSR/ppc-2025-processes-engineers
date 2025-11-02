@@ -1,12 +1,9 @@
 #include "sabirov_s_min_val_matrix/seq/include/ops_seq.hpp"
 
 #include <algorithm>
-#include <limits>
-#include <numeric>
 #include <vector>
 
 #include "sabirov_s_min_val_matrix/common/include/common.hpp"
-#include "util/include/util.hpp"
 
 namespace sabirov_s_min_val_matrix {
 
@@ -36,7 +33,7 @@ bool SabirovSMinValMatrixSEQ::RunImpl() {
   for (InType i = 0; i < n; i++) {
     matrix[i][0] = 1;
     for (InType j = 1; j < n; j++) {
-      matrix[i][j] = i * n + j + 1;
+      matrix[i][j] = (i * n) + j + 1;
     }
   }
 
@@ -44,9 +41,7 @@ bool SabirovSMinValMatrixSEQ::RunImpl() {
   for (InType i = 0; i < n; i++) {
     InType min_val = matrix[i][0];
     for (InType j = 1; j < n; j++) {
-      if (matrix[i][j] < min_val) {
-        min_val = matrix[i][j];
-      }
+      min_val = std::min(min_val, matrix[i][j]);
     }
     sum_of_mins += min_val;
   }
