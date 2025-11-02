@@ -1,5 +1,7 @@
 #include "sabirov_s_min_val_matrix/seq/include/ops_seq.hpp"
 
+#include <algorithm>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -19,41 +21,41 @@ bool SabirovSMinValMatrixSEQ::ValidationImpl() {
 }
 
 bool SabirovSMinValMatrixSEQ::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  GetOutput() = 0;
+  return true;
 }
 
 bool SabirovSMinValMatrixSEQ::RunImpl() {
-  if (GetInput() == 0) {
+  InType n = GetInput();
+  if (n == 0) {
     return false;
   }
 
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
-      }
+  std::vector<std::vector<InType>> matrix(n, std::vector<InType>(n));
+  
+  for (InType i = 0; i < n; i++) {
+    matrix[i][0] = 1;
+    for (InType j = 1; j < n; j++) {
+      matrix[i][j] = i * n + j + 1;
     }
   }
 
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
-
-  int counter = 0;
-  for (int i = 0; i < num_threads; i++) {
-    counter++;
+  InType sum_of_mins = 0;
+  for (InType i = 0; i < n; i++) {
+    InType min_val = matrix[i][0];
+    for (InType j = 1; j < n; j++) {
+      if (matrix[i][j] < min_val) {
+        min_val = matrix[i][j];
+      }
+    }
+    sum_of_mins += min_val;
   }
 
-  if (counter != 0) {
-    GetOutput() /= counter;
-  }
+  GetOutput() = sum_of_mins;
   return GetOutput() > 0;
 }
 
 bool SabirovSMinValMatrixSEQ::PostProcessingImpl() {
-  GetOutput() -= GetInput();
   return GetOutput() > 0;
 }
 

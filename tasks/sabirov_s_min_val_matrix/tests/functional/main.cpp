@@ -20,7 +20,7 @@
 
 namespace sabirov_s_min_val_matrix {
 
-class NesterovARunFuncTestsProcesses : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class SabirovSMinValMatrixFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
     return std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
@@ -64,7 +64,7 @@ class NesterovARunFuncTestsProcesses : public ppc::util::BaseRunFuncTests<InType
 
 namespace {
 
-TEST_P(NesterovARunFuncTestsProcesses, MatmulFromPic) {
+TEST_P(SabirovSMinValMatrixFuncTests, MatmulFromPic) {
   ExecuteTest(GetParam());
 }
 
@@ -76,9 +76,82 @@ const auto kTestTasksList =
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName = NesterovARunFuncTestsProcesses::PrintFuncTestName<NesterovARunFuncTestsProcesses>;
+const auto kPerfTestName = SabirovSMinValMatrixFuncTests::PrintFuncTestName<SabirovSMinValMatrixFuncTests>;
 
-INSTANTIATE_TEST_SUITE_P(PicMatrixTests, NesterovARunFuncTestsProcesses, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(PicMatrixTests, SabirovSMinValMatrixFuncTests, kGtestValues, kPerfTestName);
+
+}  // namespace
+
+namespace {
+
+class SabirovSMinValMatrixAdditionalTests : public ::testing::Test {
+ protected:
+  void RunTest(InType n, OutType expected_output) {
+    // SEQ version
+    auto taskSeq = std::make_shared<SabirovSMinValMatrixSEQ>(n);
+    ASSERT_TRUE(taskSeq->Validation());
+    ASSERT_TRUE(taskSeq->PreProcessing());
+    ASSERT_TRUE(taskSeq->Run());
+    ASSERT_TRUE(taskSeq->PostProcessing());
+    ASSERT_EQ(taskSeq->GetOutput(), expected_output);
+
+    // MPI version
+    auto taskMpi = std::make_shared<SabirovSMinValMatrixMPI>(n);
+    ASSERT_TRUE(taskMpi->Validation());
+    ASSERT_TRUE(taskMpi->PreProcessing());
+    ASSERT_TRUE(taskMpi->Run());
+    ASSERT_TRUE(taskMpi->PostProcessing());
+    ASSERT_EQ(taskMpi->GetOutput(), expected_output);
+  }
+};
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, MinimalMatrix_1x1) {
+  RunTest(1, 1);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, SmallMatrix_2x2) {
+  RunTest(2, 2);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, MediumMatrix_4x4) {
+  RunTest(4, 4);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, Matrix_6x6) {
+  RunTest(6, 6);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, LargeMatrix_8x8) {
+  RunTest(8, 8);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, LargeMatrix_10x10) {
+  RunTest(10, 10);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, VeryLargeMatrix_15x15) {
+  RunTest(15, 15);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, VeryLargeMatrix_20x20) {
+  RunTest(20, 20);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, ExtraLargeMatrix_25x25) {
+  RunTest(25, 25);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, OddSizeMatrix_9x9) {
+  RunTest(9, 9);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, OddSizeMatrix_11x11) {
+  RunTest(11, 11);
+}
+
+TEST_F(SabirovSMinValMatrixAdditionalTests, OddSizeMatrix_13x13) {
+  RunTest(13, 13);
+}
 
 }  // namespace
 

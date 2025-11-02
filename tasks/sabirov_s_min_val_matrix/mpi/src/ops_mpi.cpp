@@ -2,6 +2,8 @@
 
 #include <mpi.h>
 
+#include <algorithm>
+#include <limits>
 #include <numeric>
 #include <vector>
 
@@ -21,51 +23,64 @@ bool SabirovSMinValMatrixMPI::ValidationImpl() {
 }
 
 bool SabirovSMinValMatrixMPI::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  GetOutput() = 0;
+  return true;
 }
 
 bool SabirovSMinValMatrixMPI::RunImpl() {
-  auto input = GetInput();
-  if (input == 0) {
+  InType n = GetInput();
+  if (n == 0) {
     return false;
   }
 
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
+  int rank = 0;
+  int size = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  // Распределяем строки между процессами
+  int rows_per_proc = n / size;
+  int remainder = n % size;
+  
+  int start_row = rank * rows_per_proc + std::min(rank, remainder);
+  int end_row = start_row + rows_per_proc + (rank < remainder ? 1 : 0);
+
+  // Каждый процесс обрабатывает свои строки
+  InType local_sum = 0;
+  
+  for (InType i = start_row; i < end_row; i++) {
+    std::vector<InType> row(n);
+    row[0] = 1;
+    for (InType j = 1; j < n; j++) {
+      row[j] = i * n + j + 1;
+    }
+    
+    InType min_val = row[0];
+    for (InType j = 1; j < n; j++) {
+      if (row[j] < min_val) {
+        min_val = row[j];
       }
     }
+    local_sum += min_val;
   }
 
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
-
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  // Собираем результаты на процессе 0
+  InType global_sum = 0;
+  MPI_Reduce(&local_sum, &global_sum, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (rank == 0) {
-    GetOutput() /= num_threads;
+    GetOutput() = global_sum;
   } else {
-    int counter = 0;
-    for (int i = 0; i < num_threads; i++) {
-      counter++;
-    }
-
-    if (counter != 0) {
-      GetOutput() /= counter;
-    }
+    GetOutput() = 0;
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  // Рассылаем результат всем процессам
+  MPI_Bcast(&GetOutput(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+
   return GetOutput() > 0;
 }
 
 bool SabirovSMinValMatrixMPI::PostProcessingImpl() {
-  GetOutput() -= GetInput();
   return GetOutput() > 0;
 }
 
