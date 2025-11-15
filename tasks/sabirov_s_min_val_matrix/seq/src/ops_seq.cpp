@@ -30,22 +30,29 @@ bool SabirovSMinValMatrixSEQ::RunImpl() {
     return false;
   }
 
-  std::vector<std::vector<InType>> matrix(n, std::vector<InType>(n));
-
-  for (InType i = 0; i < n; i++) {
-    matrix[i][0] = 1;
-    for (InType j = 1; j < n; j++) {
-      matrix[i][j] = (i * n) + j + 1;
-    }
-  }
+  // Исследование, если создавать целую матрицу сразу в последовательной версии
+  // std::vector<std::vector<InType>> matrix(n, std::vector<InType>(n));
+  // for (InType i = 0; i < n; i++) {
+  //  matrix[i][0] = 1;
+  //  for (InType j = 1; j < n; j++) {
+  //    matrix[i][j] = (i * n) + j + 1;
+  //  }
+  //}
 
   GetOutput().clear();
   GetOutput().reserve(n);
 
   for (InType i = 0; i < n; i++) {
-    InType min_val = matrix[i][0];
+    std::vector<InType> row(n);
+    row[0] = 1;
     for (InType j = 1; j < n; j++) {
-      min_val = std::min(min_val, matrix[i][j]);
+      row[j] = (i * n) + j + 1;
+    }
+
+    // Нахождение минимума в строке
+    InType min_val = row[0];
+    for (InType j = 1; j < n; j++) {
+      min_val = std::min(min_val, row[j]);
     }
     GetOutput().push_back(min_val);
   }
