@@ -1,60 +1,60 @@
 #include "sabirov_s_min_val_matrix/seq/include/ops_seq.hpp"
 
-#include <numeric>
+#include <algorithm>
+#include <cstddef>
 #include <vector>
 
 #include "sabirov_s_min_val_matrix/common/include/common.hpp"
-#include "util/include/util.hpp"
 
 namespace sabirov_s_min_val_matrix {
 
 SabirovSMinValMatrixSEQ::SabirovSMinValMatrixSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = 0;
+  GetOutput().clear();
 }
 
 bool SabirovSMinValMatrixSEQ::ValidationImpl() {
-  return (GetInput() > 0) && (GetOutput() == 0);
+  return (GetInput() > 0) && (GetOutput().empty());
 }
 
 bool SabirovSMinValMatrixSEQ::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  GetOutput().clear();
+  GetOutput().reserve(GetInput());
+  return true;
 }
 
 bool SabirovSMinValMatrixSEQ::RunImpl() {
-  if (GetInput() == 0) {
+  InType n = GetInput();
+  if (n == 0) {
     return false;
   }
 
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
-      }
+  std::vector<std::vector<InType>> matrix(n, std::vector<InType>(n));
+
+  for (InType i = 0; i < n; i++) {
+    matrix[i][0] = 1;
+    for (InType j = 1; j < n; j++) {
+      matrix[i][j] = (i * n) + j + 1;
     }
   }
 
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
+  GetOutput().clear();
+  GetOutput().reserve(n);
 
-  int counter = 0;
-  for (int i = 0; i < num_threads; i++) {
-    counter++;
+  for (InType i = 0; i < n; i++) {
+    InType min_val = matrix[i][0];
+    for (InType j = 1; j < n; j++) {
+      min_val = std::min(min_val, matrix[i][j]);
+    }
+    GetOutput().push_back(min_val);
   }
 
-  if (counter != 0) {
-    GetOutput() /= counter;
-  }
-  return GetOutput() > 0;
+  return !GetOutput().empty() && (GetOutput().size() == static_cast<size_t>(n));
 }
 
 bool SabirovSMinValMatrixSEQ::PostProcessingImpl() {
-  GetOutput() -= GetInput();
-  return GetOutput() > 0;
+  return !GetOutput().empty() && (GetOutput().size() == static_cast<size_t>(GetInput()));
 }
 
 }  // namespace sabirov_s_min_val_matrix
