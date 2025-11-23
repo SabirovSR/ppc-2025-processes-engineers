@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -31,7 +32,30 @@ class SabirovSMinValMatrixFuncTests : public ppc::util::BaseRunFuncTests<InType,
     if (output_data.size() != static_cast<size_t>(input_data_)) {
       return false;
     }
-    return std::ranges::all_of(output_data, [](const auto &val) { return val == 1; });
+
+    auto generate_value = [](int64_t i, int64_t j) -> InType {
+      constexpr int64_t kA = 1103515245LL;
+      constexpr int64_t kC = 12345LL;
+      constexpr int64_t kM = 2147483648LL;
+      int64_t seed = ((i % kM) * (100000007LL % kM) + (j % kM) * (1000000009LL % kM)) % kM;
+      seed = (seed ^ 42LL) % kM;
+      int64_t val = ((kA % kM) * (seed % kM) + kC) % kM;
+      return static_cast<InType>((val % 2000001LL) - 1000000LL);
+    };
+
+    for (size_t i = 0; i < output_data.size(); i++) {
+      InType expected_min = generate_value(static_cast<int64_t>(i), 0);
+      for (InType j = 1; j < input_data_; j++) {
+        InType val = generate_value(static_cast<int64_t>(i), static_cast<int64_t>(j));
+        expected_min = std::min(expected_min, val);
+      }
+
+      if (output_data[i] != expected_min) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   InType GetTestInputData() final {
@@ -75,7 +99,24 @@ void ExpectFullPipelineSuccess(InType n) {
   ASSERT_TRUE(task->Run());
   ASSERT_TRUE(task->PostProcessing());
   ASSERT_EQ(task->GetOutput().size(), static_cast<std::size_t>(n));
-  ASSERT_TRUE(std::ranges::all_of(task->GetOutput(), [](const auto &val) { return val == 1; }));
+
+  auto generate_value = [](int64_t i, int64_t j) -> InType {
+    constexpr int64_t kA = 1103515245;
+    constexpr int64_t kC = 12345;
+    constexpr int64_t kM = 2147483648;
+    int64_t seed = (i * 100000007LL + j * 1000000009LL) ^ 42;
+    int64_t val = (kA * seed + kC) % kM;
+    return static_cast<InType>((val % 2000001) - 1000000);
+  };
+
+  for (InType i = 0; i < n; i++) {
+    InType expected_min = generate_value(static_cast<int64_t>(i), 0);
+    for (InType j = 1; j < n; j++) {
+      InType val = generate_value(static_cast<int64_t>(i), static_cast<int64_t>(j));
+      expected_min = std::min(expected_min, val);
+    }
+    ASSERT_EQ(task->GetOutput()[i], expected_min);
+  }
 }
 
 TEST(SabirovSMinValMatrixStandalone, SeqPipelineHandlesEdgeSizes) {
@@ -142,7 +183,24 @@ void RunTaskTwice(TaskType &task, InType n) {
   ASSERT_TRUE(task.Run());
   ASSERT_TRUE(task.PostProcessing());
   ASSERT_EQ(task.GetOutput().size(), static_cast<std::size_t>(n));
-  ASSERT_TRUE(std::ranges::all_of(task.GetOutput(), [](const auto &val) { return val == 1; }));
+
+  auto generate_value = [](int64_t i, int64_t j) -> InType {
+    constexpr int64_t kA = 1103515245;
+    constexpr int64_t kC = 12345;
+    constexpr int64_t kM = 2147483648;
+    int64_t seed = (i * 100000007LL + j * 1000000009LL) ^ 42;
+    int64_t val = (kA * seed + kC) % kM;
+    return static_cast<InType>((val % 2000001) - 1000000);
+  };
+
+  for (InType i = 0; i < n; i++) {
+    InType expected_min = generate_value(static_cast<int64_t>(i), 0);
+    for (InType j = 1; j < n; j++) {
+      InType val = generate_value(static_cast<int64_t>(i), static_cast<int64_t>(j));
+      expected_min = std::min(expected_min, val);
+    }
+    ASSERT_EQ(task.GetOutput()[i], expected_min);
+  }
 }
 
 TEST(SabirovSMinValMatrixPipeline, SeqTaskCanBeReusedAcrossRuns) {

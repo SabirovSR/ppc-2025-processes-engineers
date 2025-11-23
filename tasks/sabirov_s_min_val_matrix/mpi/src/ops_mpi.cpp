@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "sabirov_s_min_val_matrix/common/include/common.hpp"
@@ -49,17 +50,21 @@ bool SabirovSMinValMatrixMPI::RunImpl() {
   std::vector<InType> local_mins;
   local_mins.reserve(num_local_rows);
 
-  for (InType i = start_row; i < end_row; i++) {
-    std::vector<InType> row(n);
-    row[0] = 1;
-    for (InType j = 1; j < n; j++) {
-      row[j] = (i * n) + j + 1;
-    }
+  auto generate_value = [](int64_t i, int64_t j) -> InType {
+    constexpr int64_t kA = 1103515245LL;
+    constexpr int64_t kC = 12345LL;
+    constexpr int64_t kM = 2147483648LL;
+    int64_t seed = ((i % kM) * (100000007LL % kM) + (j % kM) * (1000000009LL % kM)) % kM;
+    seed = (seed ^ 42LL) % kM;
+    int64_t val = ((kA % kM) * (seed % kM) + kC) % kM;
+    return static_cast<InType>((val % 2000001LL) - 1000000LL);
+  };
 
-    // Нахождение минимума в строке
-    InType min_val = row[0];
+  for (InType i = start_row; i < end_row; i++) {
+    InType min_val = generate_value(static_cast<int64_t>(i), 0);
     for (InType j = 1; j < n; j++) {
-      min_val = std::min(min_val, row[j]);
+      InType val = generate_value(static_cast<int64_t>(i), static_cast<int64_t>(j));
+      min_val = std::min(min_val, val);
     }
     local_mins.push_back(min_val);
   }
