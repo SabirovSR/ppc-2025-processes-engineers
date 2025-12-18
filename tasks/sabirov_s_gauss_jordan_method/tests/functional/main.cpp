@@ -90,7 +90,7 @@ class SabirovSGaussJordanMethodRunFuncTests : public ppc::util::BaseRunFuncTests
     int n = std::get<0>(params);
 
     // Генерируем систему линейных уравнений с известным решением
-    std::mt19937 gen(42);  // NOLINT(cert-msc51-cpp)
+    std::mt19937 gen(42);
     std::uniform_real_distribution<double> dist(-10.0, 10.0);
 
     // Создаем известное решение
