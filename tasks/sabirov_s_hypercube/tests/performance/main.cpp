@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <vector>
 
 #include "sabirov_s_hypercube/common/include/common.hpp"
